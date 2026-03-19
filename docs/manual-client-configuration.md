@@ -57,5 +57,4 @@ Remove or replace these before committing:
 - Shadowsocks passwords
 - subscription tokens and URLs
 - local machine paths
-- personal provider configuration
 - permissive local tool settings that are only meant for your own machine

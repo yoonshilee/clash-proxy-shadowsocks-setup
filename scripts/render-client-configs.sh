@@ -129,10 +129,6 @@ proxy-groups:
   proxies:
   - ${CLASH_PROXY_NAME}
 rules:
-- DOMAIN-SUFFIX,bitwarden.com,DIRECT
-- DOMAIN-SUFFIX,bitwarden.eu,DIRECT
-- DOMAIN,vault.bitwarden.com,DIRECT
-- DOMAIN,vault.bitwarden.eu,DIRECT
 - GEOSITE,microsoft,DIRECT
 - DOMAIN-SUFFIX,outlook.com,DIRECT
 - DOMAIN-SUFFIX,office.com,DIRECT
@@ -162,10 +158,6 @@ cat > "${DOCS_DIR}/custom-routing-rules.yaml" <<EOF
 
 prepend:
   - IP-CIDR,${public_ip}/32,DIRECT,no-resolve
-  - DOMAIN-SUFFIX,bitwarden.com,DIRECT
-  - DOMAIN-SUFFIX,bitwarden.eu,DIRECT
-  - DOMAIN,vault.bitwarden.com,DIRECT
-  - DOMAIN,vault.bitwarden.eu,DIRECT
   - GEOSITE,microsoft,DIRECT
   - DOMAIN-SUFFIX,outlook.com,DIRECT
   - DOMAIN-SUFFIX,office.com,DIRECT

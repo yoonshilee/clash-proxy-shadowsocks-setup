@@ -41,10 +41,6 @@ proxy-groups:
   proxies:
   - example-ss
 rules:
-- DOMAIN-SUFFIX,bitwarden.com,DIRECT
-- DOMAIN-SUFFIX,bitwarden.eu,DIRECT
-- DOMAIN,vault.bitwarden.com,DIRECT
-- DOMAIN,vault.bitwarden.eu,DIRECT
 - GEOSITE,microsoft,DIRECT
 - DOMAIN-SUFFIX,outlook.com,DIRECT
 - DOMAIN-SUFFIX,office.com,DIRECT
