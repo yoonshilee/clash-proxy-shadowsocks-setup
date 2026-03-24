@@ -68,3 +68,8 @@ After changing `server/config/setup.conf`, regenerate the local files with:
 ```bash
 bash client/render-client-configs.sh
 ```
+
+
+The server-side installer also writes generated UUID, REALITY keys, short ID, token, and detected public IP back into `server/config/setup.conf`, so the client examples can be regenerated later from the same saved values.
+
+

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 load_project_config() {
     local repo_root="$1"
     local example_config="${repo_root}/server/config/setup.conf.example"
@@ -17,6 +19,8 @@ load_project_config() {
         # shellcheck disable=SC1090
         source "${user_config}"
     fi
+
+    PROJECT_USER_CONFIG="${user_config}"
 
     : "${XRAY_PORT:=443}"
     : "${PUBLIC_IP:=}"
