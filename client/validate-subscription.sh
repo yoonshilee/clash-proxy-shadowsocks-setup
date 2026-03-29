@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PROFILE_PATH="${1:-client/active-config/clash-verge-check.yaml}"
+PROFILE_PATH="${1:-client/local-config/clash-verge-check.yaml}"
 
 [[ -f "${PROFILE_PATH}" ]] || {
     echo "Profile not found: ${PROFILE_PATH}" >&2
@@ -10,7 +10,7 @@ PROFILE_PATH="${1:-client/active-config/clash-verge-check.yaml}"
 }
 
 required_patterns=(
-    '^mode: '
+    '^mode: rule$'
     '^mixed-port: '
     '^proxies:'
     '^proxy-groups:'
@@ -18,6 +18,7 @@ required_patterns=(
     'type: vless'
     'packet-encoding: xudp'
     'reality-opts:'
+    'IP-CIDR,.*?/32,DIRECT,no-resolve'
     'DOMAIN-SUFFIX,openai.com,PROXY'
     'DOMAIN-SUFFIX,microsoft.com,DIRECT'
     'MATCH,PROXY'
@@ -31,3 +32,4 @@ for pattern in "${required_patterns[@]}"; do
 done
 
 echo "Validated profile: ${PROFILE_PATH}"
+

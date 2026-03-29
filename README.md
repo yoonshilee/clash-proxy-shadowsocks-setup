@@ -144,16 +144,24 @@ Save the subscription URL. You will use it on the personal computer side.
 
 Because the subscription YAML already includes `proxies`, `proxy-groups`, and `rules`, the imported profile should directly install the routing rules onto the personal computer client profile.
 
-## 3. Validate That the Subscription Profile Carries Rules
+## 3. Public Templates And Validation
 
-This repository also contains local generated examples under `client/active-config/`. To verify the generated Clash profile still has a node and rules, run:
+The YAML files under `client/active-config/` are public example templates for this repository. They are not meant to store a user's real local Clash configuration.
+
+Use them for:
+
+- understanding the expected proxy and rule structure
+- manual fallback when subscription import fails
+- adapting the config to your own environment outside this public repository
+
+To verify the generated example profile structure, run:
 
 ```bash
 bash client/render-client-configs.sh
 bash client/validate-subscription.sh
 ```
 
-The validator checks that the generated profile contains:
+The validator checks that the generated example profile contains:
 
 - a `vless` node
 - `proxy-groups`
@@ -162,21 +170,42 @@ The validator checks that the generated profile contains:
 - the OpenAI proxy rules
 - the Microsoft direct rules
 
-This confirms the generated profile can carry the rule set required by the personal computer side.
+This confirms the example profile structure can carry the rule set required by the personal computer side.
 
-## 4. If Subscription Import Is Not Enough
+## 4. Manual Fallback And Local Client Notes
 
-Use one of these local files directly on the personal computer:
+If subscription import fails, use one of these example files as a starting point on the personal computer:
 
 - `client/active-config/clash-verge.yaml`
 - `client/active-config/clash-verge-check.yaml`
 - `client/active-config/custom-routing-rules.yaml`
 
-Regenerate them any time after changing `server/config/setup.conf`:
+Clash Verge can usually use them like this:
+
+1. Create a new local profile.
+2. Paste the contents of one of the example YAML files.
+3. Save and select that profile.
+
+Rule intent in these examples:
+
+- keep Microsoft / Outlook / Office related traffic on `DIRECT`
+- send OpenAI related traffic to `PROXY`
+- send the rest to `PROXY`
+- keep the server IP itself on `DIRECT` to avoid proxy loops
+
+About system proxy settings:
+
+- subscription content can carry proxy nodes, groups, DNS, and `rules:`
+- Clash Verge app-level switches such as `Set as system proxy`, TUN mode, or some local UI preferences are still local client settings
+- if an app ignores system proxy, use app-specific env vars or wrappers like `client/active-config/opencode-proxy.cmd`
+
+If you want to regenerate the public example files after changing `server/config/setup.conf`, run:
 
 ```bash
 bash client/render-client-configs.sh
 ```
+
+The server-side installer also writes generated UUID, REALITY keys, short ID, token, and detected public IP back into `server/config/setup.conf`, so you can regenerate examples from the saved effective values later.
 
 ## 5. Migration Notes
 
@@ -193,6 +222,7 @@ During install it:
 - Do not commit `server/config/setup.conf`.
 - Do not commit real UUIDs, REALITY private keys, public keys, short IDs, private IPs, or subscription URLs.
 - Treat `server/config/setup.conf` as machine-specific private data.
+- Treat `client/active-config/*.yaml` as public example templates only. Do not turn them into your real long-term local config inside this public repository.
 
 
 

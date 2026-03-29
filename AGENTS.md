@@ -64,7 +64,6 @@ Relevant files:
 - `client/active-config/clash-verge-check.yaml`
 - `client/active-config/custom-routing-rules.yaml`
 - `client/active-config/opencode-proxy.cmd`
-- `client/README.md`
 - `client/validate-subscription.sh`
 
 Agent rules on the personal computer side:
@@ -72,6 +71,7 @@ Agent rules on the personal computer side:
 - Do not run VPS install commands on the personal computer.
 - Do not treat local Clash files as VPS deployment files.
 - Local Clash-related changes belong under `client/`.
+- Treat `client/active-config/*` as public example templates, not as the user's private long-term local config.
 - If the user asks to modify Clash local configuration, work on `client/active-config/*` or `client/render-client-configs.sh`.
 - If the user only needs to use the server, importing the subscription URL into Clash Verge or Mihomo is the default path.
 - Use `bash client/validate-subscription.sh` to verify that the generated Clash profile still contains a node, proxy groups, and routing rules.

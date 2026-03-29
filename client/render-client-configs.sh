@@ -54,7 +54,7 @@ mkdir -p "${DOCS_DIR}"
 cat > "${DOCS_DIR}/clash-verge.yaml" <<EOF
 # Generated from server/config/setup.conf(.example) by client/render-client-configs.sh
 
-mode: ${CLASH_GLOBAL_MODE}
+mode: ${CLASH_RULE_MODE}
 mixed-port: ${CLASH_MIXED_PORT}
 allow-lan: false
 log-level: info
@@ -103,14 +103,23 @@ proxy-groups:
   proxies:
   - ${CLASH_PROXY_NAME}
 rules:
+- IP-CIDR,${public_ip}/32,DIRECT,no-resolve
 - GEOSITE,microsoft,DIRECT
 - DOMAIN-SUFFIX,outlook.com,DIRECT
 - DOMAIN-SUFFIX,office.com,DIRECT
 - DOMAIN-SUFFIX,office365.com,DIRECT
 - DOMAIN-SUFFIX,microsoft.com,DIRECT
 - DOMAIN-SUFFIX,live.com,DIRECT
+- DOMAIN-SUFFIX,live.net,DIRECT
 - DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
 - DOMAIN-SUFFIX,msftncsi.com,DIRECT
+- DOMAIN-SUFFIX,msauth.net,DIRECT
+- DOMAIN-SUFFIX,msftauth.net,DIRECT
+- DOMAIN-SUFFIX,msidentity.com,DIRECT
+- DOMAIN-SUFFIX,onestore.ms,DIRECT
+- DOMAIN-SUFFIX,global.ssl.fastly.net,DIRECT
+- DOMAIN-SUFFIX,azure.com,DIRECT
+- DOMAIN-SUFFIX,azureedge.net,DIRECT
 - GEOSITE,openai,PROXY
 - DOMAIN-SUFFIX,openai.com,PROXY
 - DOMAIN-SUFFIX,chatgpt.com,PROXY
@@ -171,6 +180,7 @@ proxy-groups:
   proxies:
   - ${CLASH_PROXY_NAME}
 rules:
+- IP-CIDR,${public_ip}/32,DIRECT,no-resolve
 - GEOSITE,microsoft,DIRECT
 - DOMAIN-SUFFIX,outlook.com,DIRECT
 - DOMAIN-SUFFIX,office.com,DIRECT
