@@ -49,6 +49,7 @@ proxy-groups:
   proxies:
   - vless-reality
 rules:
+- IP-CIDR,<server-public-ip>/32,DIRECT,no-resolve
 - GEOSITE,microsoft,DIRECT
 - DOMAIN-SUFFIX,outlook.com,DIRECT
 - DOMAIN-SUFFIX,office.com,DIRECT

@@ -35,6 +35,7 @@ load_project_config() {
     : "${SUB_TOKEN:=AUTO_GENERATE}"
     : "${CLASH_PROXY_NAME:=example-vless-reality}"
     : "${CLASH_MIXED_PORT:=7897}"
+    : "${CLASH_SOCKS_PORT:=7898}"
     : "${CLASH_GLOBAL_MODE:=global}"
     : "${CLASH_RULE_MODE:=rule}"
 }

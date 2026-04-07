@@ -247,15 +247,21 @@ REM We set them here when Clash mixed port is reachable.
 REM This avoids permanent env vars that would pollute other applications.
 
 set "_CLASH_RUNNING="
-for /f "usebackq delims=" %%i in (\`powershell -NoProfile -Command "if(Get-NetTCPConnection -State Listen -LocalAddress 127.0.0.1 -LocalPort ${CLASH_MIXED_PORT} -ErrorAction SilentlyContinue){'yes'}else{'no'}"\`) do set "_CLASH_RUNNING=%%i"
+for /f "usebackq delims=" %%i in (\`powershell -NoProfile -Command "if(Get-NetTCPConnection -State Listen -LocalPort ${CLASH_MIXED_PORT} -ErrorAction SilentlyContinue){'yes'}else{'no'}"\`) do set "_CLASH_RUNNING=%%i"
 
-if "%_CLASH_RUNNING%"=="yes" (
+if /I "%_CLASH_RUNNING%"=="yes" (
   set "HTTP_PROXY=http://127.0.0.1:${CLASH_MIXED_PORT}"
   set "HTTPS_PROXY=http://127.0.0.1:${CLASH_MIXED_PORT}"
-  set "ALL_PROXY=http://127.0.0.1:${CLASH_MIXED_PORT}"
+  set "ALL_PROXY=socks5://127.0.0.1:${CLASH_SOCKS_PORT}"
   set "NO_PROXY=localhost,127.0.0.1,::1"
+  set "http_proxy=http://127.0.0.1:${CLASH_MIXED_PORT}"
+  set "https_proxy=http://127.0.0.1:${CLASH_MIXED_PORT}"
+  set "all_proxy=socks5://127.0.0.1:${CLASH_SOCKS_PORT}"
+  set "no_proxy=localhost,127.0.0.1,::1"
   echo [opencode-proxy] Clash detected, proxy enabled
+ ) else (
+  echo [opencode-proxy] Clash not detected, starting without proxy
 )
 
-"%~dp0opencode.cmd" %*
+call "%~dp0opencode.cmd" %*
 EOF
