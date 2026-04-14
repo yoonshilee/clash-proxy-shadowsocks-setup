@@ -38,6 +38,7 @@ load_project_config() {
     : "${CLASH_SOCKS_PORT:=7898}"
     : "${CLASH_GLOBAL_MODE:=global}"
     : "${CLASH_RULE_MODE:=rule}"
+    : "${CLASH_DIRECT_EXTRA_DOMAINS:=}"
 }
 
 should_autogenerate() {

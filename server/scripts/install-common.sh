@@ -17,6 +17,9 @@ require_root() {
     [[ $EUID -eq 0 ]] || error "Please run as root (sudo)."
 }
 
+# shellcheck source=server/scripts/clash-rules.sh
+source "${REPO_ROOT}/server/scripts/clash-rules.sh"
+
 detect_os() {
     [[ -f /etc/os-release ]] || error "Cannot detect OS: /etc/os-release is missing."
 
@@ -221,6 +224,7 @@ CLASH_PROXY_NAME=${CLASH_PROXY_NAME}
 CLASH_MIXED_PORT=${CLASH_MIXED_PORT}
 CLASH_GLOBAL_MODE=${CLASH_GLOBAL_MODE}
 CLASH_RULE_MODE=${CLASH_RULE_MODE}
+CLASH_DIRECT_EXTRA_DOMAINS=${CLASH_DIRECT_EXTRA_DOMAINS}
 EOF
 
     info "Saved effective install values to ${config_path}"
@@ -374,29 +378,7 @@ proxy-groups:
       - "${CLASH_PROXY_NAME}"
 
 rules:
-  - IP-CIDR,${public_ip}/32,DIRECT,no-resolve
-  - GEOSITE,microsoft,DIRECT
-  - DOMAIN-SUFFIX,outlook.com,DIRECT
-  - DOMAIN-SUFFIX,office.com,DIRECT
-  - DOMAIN-SUFFIX,office365.com,DIRECT
-  - DOMAIN-SUFFIX,microsoft.com,DIRECT
-  - DOMAIN-SUFFIX,live.com,DIRECT
-  - DOMAIN-SUFFIX,live.net,DIRECT
-  - DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
-  - DOMAIN-SUFFIX,msftncsi.com,DIRECT
-  - DOMAIN-SUFFIX,msauth.net,DIRECT
-  - DOMAIN-SUFFIX,msftauth.net,DIRECT
-  - DOMAIN-SUFFIX,msidentity.com,DIRECT
-  - DOMAIN-SUFFIX,onestore.ms,DIRECT
-  - DOMAIN-SUFFIX,global.ssl.fastly.net,DIRECT
-  - DOMAIN-SUFFIX,azure.com,DIRECT
-  - DOMAIN-SUFFIX,azureedge.net,DIRECT
-  - GEOSITE,openai,PROXY
-  - DOMAIN-SUFFIX,openai.com,PROXY
-  - DOMAIN-SUFFIX,chatgpt.com,PROXY
-  - DOMAIN-SUFFIX,oaistatic.com,PROXY
-  - DOMAIN-SUFFIX,oaiusercontent.com,PROXY
-  - MATCH,PROXY
+$(emit_clash_rule_lines "  - " "${public_ip}" yes)
 EOF
 }
 

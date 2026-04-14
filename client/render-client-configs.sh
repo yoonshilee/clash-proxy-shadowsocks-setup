@@ -7,6 +7,8 @@ DOCS_DIR="${SCRIPT_DIR}/active-config"
 
 # shellcheck source=server/scripts/load-config.sh
 source "${REPO_ROOT}/server/scripts/load-config.sh"
+# shellcheck source=server/scripts/clash-rules.sh
+source "${REPO_ROOT}/server/scripts/clash-rules.sh"
 load_project_config "${REPO_ROOT}"
 
 derive_reality_public_key() {
@@ -102,30 +104,13 @@ proxy-groups:
   type: select
   proxies:
   - ${CLASH_PROXY_NAME}
+- name: Auto
+  type: select
+  proxies:
+  - PROXY
+  - ${CLASH_PROXY_NAME}
 rules:
-- IP-CIDR,${public_ip}/32,DIRECT,no-resolve
-- GEOSITE,microsoft,DIRECT
-- DOMAIN-SUFFIX,outlook.com,DIRECT
-- DOMAIN-SUFFIX,office.com,DIRECT
-- DOMAIN-SUFFIX,office365.com,DIRECT
-- DOMAIN-SUFFIX,microsoft.com,DIRECT
-- DOMAIN-SUFFIX,live.com,DIRECT
-- DOMAIN-SUFFIX,live.net,DIRECT
-- DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
-- DOMAIN-SUFFIX,msftncsi.com,DIRECT
-- DOMAIN-SUFFIX,msauth.net,DIRECT
-- DOMAIN-SUFFIX,msftauth.net,DIRECT
-- DOMAIN-SUFFIX,msidentity.com,DIRECT
-- DOMAIN-SUFFIX,onestore.ms,DIRECT
-- DOMAIN-SUFFIX,global.ssl.fastly.net,DIRECT
-- DOMAIN-SUFFIX,azure.com,DIRECT
-- DOMAIN-SUFFIX,azureedge.net,DIRECT
-- GEOSITE,openai,PROXY
-- DOMAIN-SUFFIX,openai.com,PROXY
-- DOMAIN-SUFFIX,chatgpt.com,PROXY
-- DOMAIN-SUFFIX,oaistatic.com,PROXY
-- DOMAIN-SUFFIX,oaiusercontent.com,PROXY
-- MATCH,PROXY
+$(emit_clash_rule_lines "- " "${public_ip}" yes)
 EOF
 
 cat > "${DOCS_DIR}/clash-verge-check.yaml" <<EOF
@@ -179,58 +164,20 @@ proxy-groups:
   type: select
   proxies:
   - ${CLASH_PROXY_NAME}
+- name: Auto
+  type: select
+  proxies:
+  - PROXY
+  - ${CLASH_PROXY_NAME}
 rules:
-- IP-CIDR,${public_ip}/32,DIRECT,no-resolve
-- GEOSITE,microsoft,DIRECT
-- DOMAIN-SUFFIX,outlook.com,DIRECT
-- DOMAIN-SUFFIX,office.com,DIRECT
-- DOMAIN-SUFFIX,office365.com,DIRECT
-- DOMAIN-SUFFIX,microsoft.com,DIRECT
-- DOMAIN-SUFFIX,live.com,DIRECT
-- DOMAIN-SUFFIX,live.net,DIRECT
-- DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
-- DOMAIN-SUFFIX,msftncsi.com,DIRECT
-- DOMAIN-SUFFIX,msauth.net,DIRECT
-- DOMAIN-SUFFIX,msftauth.net,DIRECT
-- DOMAIN-SUFFIX,msidentity.com,DIRECT
-- DOMAIN-SUFFIX,onestore.ms,DIRECT
-- DOMAIN-SUFFIX,global.ssl.fastly.net,DIRECT
-- DOMAIN-SUFFIX,azure.com,DIRECT
-- DOMAIN-SUFFIX,azureedge.net,DIRECT
-- GEOSITE,openai,PROXY
-- DOMAIN-SUFFIX,openai.com,PROXY
-- DOMAIN-SUFFIX,chatgpt.com,PROXY
-- DOMAIN-SUFFIX,oaistatic.com,PROXY
-- DOMAIN-SUFFIX,oaiusercontent.com,PROXY
-- MATCH,PROXY
+$(emit_clash_rule_lines "- " "${public_ip}" yes)
 EOF
 
 cat > "${DOCS_DIR}/custom-routing-rules.yaml" <<EOF
 # Generated from server/config/setup.conf(.example) by client/render-client-configs.sh
 
 prepend:
-  - IP-CIDR,${public_ip}/32,DIRECT,no-resolve
-  - GEOSITE,microsoft,DIRECT
-  - DOMAIN-SUFFIX,outlook.com,DIRECT
-  - DOMAIN-SUFFIX,office.com,DIRECT
-  - DOMAIN-SUFFIX,office365.com,DIRECT
-  - DOMAIN-SUFFIX,microsoft.com,DIRECT
-  - DOMAIN-SUFFIX,live.com,DIRECT
-  - DOMAIN-SUFFIX,live.net,DIRECT
-  - DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
-  - DOMAIN-SUFFIX,msftncsi.com,DIRECT
-  - DOMAIN-SUFFIX,msauth.net,DIRECT
-  - DOMAIN-SUFFIX,msftauth.net,DIRECT
-  - DOMAIN-SUFFIX,msidentity.com,DIRECT
-  - DOMAIN-SUFFIX,onestore.ms,DIRECT
-  - DOMAIN-SUFFIX,global.ssl.fastly.net,DIRECT
-  - DOMAIN-SUFFIX,azure.com,DIRECT
-  - DOMAIN-SUFFIX,azureedge.net,DIRECT
-  - GEOSITE,openai,PROXY
-  - DOMAIN-SUFFIX,openai.com,PROXY
-  - DOMAIN-SUFFIX,chatgpt.com,PROXY
-  - DOMAIN-SUFFIX,oaistatic.com,PROXY
-  - DOMAIN-SUFFIX,oaiusercontent.com,PROXY
+$(emit_clash_rule_lines "  - " "${public_ip}" no)
 
 append: []
 

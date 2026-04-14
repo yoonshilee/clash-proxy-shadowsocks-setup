@@ -18,7 +18,11 @@ required_patterns=(
     'type: vless'
     'packet-encoding: xudp'
     'reality-opts:'
+    'name: Auto'
     'IP-CIDR,.*?/32,DIRECT,no-resolve'
+    'DOMAIN-SUFFIX,outlook.com,DIRECT'
+    'DOMAIN-SUFFIX,office365.com,DIRECT'
+    'DOMAIN-SUFFIX,office.net,DIRECT'
     'DOMAIN-SUFFIX,openai.com,PROXY'
     'DOMAIN-SUFFIX,microsoft.com,DIRECT'
     'MATCH,PROXY'
@@ -32,4 +36,3 @@ for pattern in "${required_patterns[@]}"; do
 done
 
 echo "Validated profile: ${PROFILE_PATH}"
-
