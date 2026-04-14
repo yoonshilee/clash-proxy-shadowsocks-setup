@@ -1,5 +1,6 @@
-# Copy this file to server/config/setup.conf and edit the values you want to override.
-# server/install-centos.sh, server/install-ubuntu.sh, server/install.sh, server/uninstall-centos.sh, server/uninstall-ubuntu.sh, server/uninstall.sh, and client/render-client-configs.sh all read from it.
+# Copy this file to server/config/setup.conf before installation.
+# server/config/setup.conf is your private local config file and is not tracked by Git.
+# The installer writes the final effective values back into server/config/setup.conf.
 
 # Server-side settings
 XRAY_PORT=443
@@ -9,7 +10,7 @@ REALITY_DEST=www.cloudflare.com:443
 REALITY_FINGERPRINT=chrome
 SUBSCRIPTION_PORT=8443
 
-# Use AUTO_GENERATE to let the installer create a random value and then write the final result back into server/config/setup.conf.
+# Use AUTO_GENERATE to let the installer create a random value during installation.
 XRAY_UUID=AUTO_GENERATE
 REALITY_PRIVATE_KEY=AUTO_GENERATE
 REALITY_PUBLIC_KEY=AUTO_GENERATE

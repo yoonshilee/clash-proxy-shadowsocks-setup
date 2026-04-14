@@ -3,7 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-DOCS_DIR="${SCRIPT_DIR}/active-config"
+DEFAULT_OUTPUT_DIR="${SCRIPT_DIR}/active-config"
+DOCS_DIR="${RENDER_OUTPUT_DIR:-${DEFAULT_OUTPUT_DIR}}"
 
 # shellcheck source=server/scripts/load-config.sh
 source "${REPO_ROOT}/server/scripts/load-config.sh"

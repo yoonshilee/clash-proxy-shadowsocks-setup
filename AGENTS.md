@@ -32,7 +32,7 @@ Agent rules on the VPS side:
 - If `ID=centos`, `rhel`, `rocky`, `almalinux`, `fedora`, or `ID_LIKE` contains `rhel` / `fedora`, run `sudo bash server/install-centos.sh`.
 - `server/install.sh` is only a convenience dispatcher. Agents should still identify the OS first and choose the matching installer explicitly.
 - Run `server/uninstall.sh`, `server/uninstall-centos.sh`, or `server/uninstall-ubuntu.sh` only on the VPS.
-- Edit `server/config/setup.conf` when changing server-side values. After a successful install, generated values are also written back into `server/config/setup.conf` automatically.
+- Edit `server/config/setup.conf` when changing server-side values. It is the VPS-side private config file and is not tracked by Git. After a successful install, the final effective values are also written back into it automatically.
 - Server-side values include `XRAY_PORT`, `PUBLIC_IP`, `REALITY_SERVER_NAME`, `REALITY_DEST`, `REALITY_FINGERPRINT`, `XRAY_UUID`, `REALITY_PRIVATE_KEY`, `REALITY_PUBLIC_KEY`, `REALITY_SHORT_ID`, `SUB_TOKEN`, and `SUBSCRIPTION_PORT`.
 - The installer requires root or sudo.
 - The installer configures Xray, Caddy, then runs the distro-appropriate firewall-open script, and applies SELinux changes when applicable.
@@ -50,7 +50,7 @@ Typical VPS workflow:
    `sudo bash server/install-centos.sh`
    or
    `sudo bash server/install-ubuntu.sh`
-6. Wait for the installer to finish. The effective install values, including generated credentials, are written into `server/config/setup.conf`.
+6. Wait for the installer to finish. The final effective values, including generated credentials, are written into `server/config/setup.conf`.
 7. Save the printed subscription URL.
 
 ### 2. Personal Computer Side
@@ -64,6 +64,7 @@ Relevant files:
 - `client/active-config/clash-verge-check.yaml`
 - `client/active-config/custom-routing-rules.yaml`
 - `client/active-config/opencode-proxy.cmd`
+- `client/local-config/`
 - `client/validate-subscription.sh`
 
 Agent rules on the personal computer side:
@@ -71,7 +72,8 @@ Agent rules on the personal computer side:
 - Do not run VPS install commands on the personal computer.
 - Do not treat local Clash files as VPS deployment files.
 - Local Clash-related changes belong under `client/`.
-- Treat `client/active-config/*` as public example templates, not as the user's private long-term local config.
+- Treat `client/active-config/*` as public example templates tracked by Git.
+- Treat `client/local-config/*` as VPS- or machine-local generated output that is not tracked by Git.
 - If the user asks to modify Clash local configuration, work on `client/active-config/*` or `client/render-client-configs.sh`.
 - If the user only needs to use the server, importing the subscription URL into Clash Verge or Mihomo is the default path.
 - Use `bash client/validate-subscription.sh` to verify that the generated Clash profile still contains a node, proxy groups, and routing rules.
@@ -81,9 +83,9 @@ Typical personal computer workflow:
 1. Get the subscription URL produced on the VPS.
 2. Import that URL into Clash Verge or Mihomo.
 3. Enable the imported profile.
-4. If custom local examples are needed, edit `server/config/setup.conf` values and run `bash client/render-client-configs.sh`.
-5. If needed, validate the generated example profile with `bash client/validate-subscription.sh`.
-6. Apply or adapt the files under `client/active-config/` locally only when subscription import is not enough.
+4. If custom local examples are needed on the VPS, edit `server/config/setup.conf` and rerun the installer, or run `bash client/render-client-configs.sh` manually.
+5. If needed, validate the generated local profile with `bash client/validate-subscription.sh client/local-config/clash-verge-check.yaml`.
+6. Apply or adapt the files under `client/active-config/` only as tracked example templates, and use `client/local-config/` for machine-local generated output.
 
 ## Operational Boundary
 
@@ -97,7 +99,7 @@ If the endpoint is unclear, the agent should ask which side the user is working 
 ## Safety
 
 - Never commit real UUIDs, REALITY private keys, public keys, short IDs, subscription URLs, or private IPs.
-- Treat `server/config/setup.conf` as private machine-specific configuration.
+- Treat `server/config/setup.conf` as a private machine-specific config file. Do not expect Git updates to manage or replace it.
 - Do not assume a local Clash config should be deployed to the VPS.
 - Do not assume a VPS installation script should be run on the personal computer.
 - Do not delete the legacy Shadowsocks config unless the user explicitly asks for full removal.
