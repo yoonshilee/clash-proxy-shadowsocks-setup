@@ -96,6 +96,7 @@ CLASH_CHINA_APP_DIRECT_SUFFIXES=(
     "xhscdn.com"
     "xhscdn.net"
     "xhslink.com"
+    "push2his.eastmoney.com"
 )
 
 CLASH_OPENAI_PROXY_SUFFIXES=(

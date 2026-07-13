@@ -422,6 +422,7 @@ validate_subscription_yaml() {
         'DOMAIN-SUFFIX,weixin.qq.com,DIRECT'
         'DOMAIN-SUFFIX,bilibili.com,DIRECT'
         'DOMAIN-SUFFIX,xiaohongshu.com,DIRECT'
+        'DOMAIN-SUFFIX,push2his.eastmoney.com,DIRECT'
         'DOMAIN-SUFFIX,openai.com,PROXY'
         'MATCH,PROXY'
     )

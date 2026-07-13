@@ -90,6 +90,7 @@ prepend:
   - DOMAIN-SUFFIX,xhscdn.com,DIRECT
   - DOMAIN-SUFFIX,xhscdn.net,DIRECT
   - DOMAIN-SUFFIX,xhslink.com,DIRECT
+  - DOMAIN-SUFFIX,push2his.eastmoney.com,DIRECT
   - GEOSITE,openai,PROXY
   - DOMAIN-SUFFIX,openai.com,PROXY
   - DOMAIN-SUFFIX,chatgpt.com,PROXY
