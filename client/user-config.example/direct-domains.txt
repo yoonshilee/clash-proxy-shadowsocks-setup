@@ -1,0 +1,2 @@
+# One domain suffix per line. Blank lines and # comments are ignored.
+# example.com

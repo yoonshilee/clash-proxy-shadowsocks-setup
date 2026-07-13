@@ -28,6 +28,8 @@ reality_server_name="${RENDER_REALITY_SERVER_NAME:-${REALITY_SERVER_NAME}}"
 reality_short_id="${RENDER_REALITY_SHORT_ID:-${REALITY_SHORT_ID}}"
 reality_public_key="${RENDER_REALITY_PUBLIC_KEY:-${REALITY_PUBLIC_KEY}}"
 sub_token="${RENDER_SUB_TOKEN:-${SUB_TOKEN}}"
+provider_url="${RENDER_PROVIDER_URL:-__VPS_PROVIDER_URL__}"
+mihomo_public_ip="${RENDER_PUBLIC_IP:-__VPS_PUBLIC_IP__}"
 
 if should_autogenerate "${xray_uuid}"; then
     xray_uuid="<generated-uuid>"
@@ -59,6 +61,7 @@ q_reality_server_name="$(yaml_quote "${reality_server_name}")"
 q_reality_fingerprint="$(yaml_quote "${REALITY_FINGERPRINT}")"
 q_reality_public_key="$(yaml_quote "${reality_public_key}")"
 q_reality_short_id="$(yaml_quote "${reality_short_id}")"
+q_provider_url="$(yaml_quote "${provider_url}")"
 
 mkdir -p "${DOCS_DIR}"
 
@@ -182,15 +185,52 @@ rules:
 $(emit_clash_rule_lines "- " "${public_ip}" yes)
 EOF
 
-cat > "${DOCS_DIR}/custom-routing-rules.yaml" <<EOF
+cat > "${DOCS_DIR}/mihomo-provider.yaml" <<EOF
 # Generated from server/config/setup.conf(.example) by client/render-client-configs.sh
+# Personal domain rules are inserted by client/manage-user-rules.ps1.
 
-prepend:
-$(emit_clash_rule_lines "  - " "${public_ip}" no)
+mode: ${CLASH_RULE_MODE}
+mixed-port: ${CLASH_MIXED_PORT}
+allow-lan: false
+log-level: info
+ipv6: true
+unified-delay: true
+profile:
+  store-selected: true
 
-append: []
+proxy-providers:
+  vps:
+    type: http
+    url: ${q_provider_url}
+    path: ./proxy_providers/vps.yaml
+    interval: 3600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5000
+      lazy: true
+      expected-status: 204
 
-delete: []
+proxy-groups:
+- name: Auto
+  type: url-test
+  use:
+  - vps
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 100
+  lazy: true
+- name: PROXY
+  type: select
+  proxies:
+  - Auto
+  use:
+  - vps
+
+rules:
+# __USER_RULES__
+$(emit_clash_rule_lines "- " "${mihomo_public_ip}" yes)
 EOF
 
 cat > "${DOCS_DIR}/opencode-proxy.cmd" <<EOF

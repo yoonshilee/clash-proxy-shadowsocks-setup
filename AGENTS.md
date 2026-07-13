@@ -60,10 +60,13 @@ This is the local machine running Clash Verge, Mihomo, or another Clash-compatib
 Relevant files:
 
 - `client/render-client-configs.sh`
+- `client/manage-user-rules.cmd`
+- `client/manage-user-rules.ps1`
 - `client/active-config/clash-verge.yaml`
 - `client/active-config/clash-verge-check.yaml`
-- `client/active-config/custom-routing-rules.yaml`
+- `client/active-config/mihomo-provider.yaml`
 - `client/active-config/opencode-proxy.cmd`
+- `client/user-config/`
 - `client/local-config/`
 - `client/validate-subscription.sh`
 
@@ -74,18 +77,23 @@ Agent rules on the personal computer side:
 - Local Clash-related changes belong under `client/`.
 - Treat `client/active-config/*` as public example templates tracked by Git.
 - Treat `client/local-config/*` as VPS- or machine-local generated output that is not tracked by Git.
-- If the user asks to modify Clash local configuration, work on `client/active-config/*` or `client/render-client-configs.sh`.
+- Treat `client/user-config/*` as private, user-owned routing input that is not tracked by Git and must never be written by VPS installers or general render scripts.
+- If the user asks to modify personal direct or proxy domains, work on `client/user-config/*` and use `client/manage-user-rules.cmd`.
+- If the user asks to modify public examples or generated structure, work on `client/active-config/*` or `client/render-client-configs.sh`.
 - If the user only needs to use the server, importing the subscription URL into Clash Verge or Mihomo is the default path.
+- The full subscription URL contains nodes, proxy groups, and server-managed rules. The provider URL ending in `-provider.yaml` contains nodes only.
 - Use `bash client/validate-subscription.sh` to verify that the generated Clash profile still contains a node, proxy groups, and routing rules.
+- Use `.\client\manage-user-rules.cmd validate` before applying personal rules.
 
 Typical personal computer workflow:
 
 1. Get the subscription URL produced on the VPS.
 2. Import that URL into Clash Verge or Mihomo.
 3. Enable the imported profile.
-4. If custom local examples are needed on the VPS, edit `server/config/setup.conf` and rerun the installer, or run `bash client/render-client-configs.sh` manually.
-5. If needed, validate the generated local profile with `bash client/validate-subscription.sh client/local-config/clash-verge-check.yaml`.
-6. Apply or adapt the files under `client/active-config/` only as tracked example templates, and use `client/local-config/` for machine-local generated output.
+4. Run `.\client\manage-user-rules.cmd init`, then edit the private domain lists under `client/user-config/`.
+5. Run `.\client\manage-user-rules.cmd copy` and paste the result into the current VPS subscription's Clash Verge **Edit Rules > Advanced** editor.
+6. For standalone Mihomo, save the printed provider URL in `client/user-config/provider-url.txt`, run `.\client\manage-user-rules.cmd render`, and load `client/local-config/mihomo.yaml`.
+7. If needed, validate the generated full profile with `bash client/validate-subscription.sh client/local-config/clash-verge-check.yaml`.
 
 ## Operational Boundary
 
@@ -93,12 +101,14 @@ When deciding what to do, first determine the endpoint:
 
 - If the task is about installing Xray, changing the REALITY port, opening firewall ports, configuring Caddy, rotating REALITY credentials, or publishing the subscription URL on the server, it is a VPS-side task.
 - If the task is about Clash Verge profiles, routing rules, local proxy wrappers, importing subscriptions, or validating a generated Clash YAML on the personal computer, it is a personal-computer-side task.
+- VPS changes may update server-managed subscription rules and provider nodes, but must not edit `client/user-config/`. Personal rules are prepended locally and take precedence.
 
 If the endpoint is unclear, the agent should ask which side the user is working on before making changes.
 
 ## Safety
 
 - Never commit real UUIDs, REALITY private keys, public keys, short IDs, subscription URLs, or private IPs.
+- Never commit provider URLs or `client/user-config/`.
 - Treat `server/config/setup.conf` as a private machine-specific config file. Do not expect Git updates to manage or replace it.
 - Do not assume a local Clash config should be deployed to the VPS.
 - Do not assume a VPS installation script should be run on the personal computer.

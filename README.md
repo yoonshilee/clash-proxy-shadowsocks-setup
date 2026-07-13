@@ -48,6 +48,8 @@ Common settings:
 - `CLASH_PROXY_NAME`
 - `CLASH_DIRECT_EXTRA_DOMAINS`
 
+`CLASH_DIRECT_EXTRA_DOMAINS` changes the server-managed defaults in the published subscription. Personal computer rules belong in `client/user-config/` instead.
+
 Notes:
 
 - `server/config/setup.conf.example` is only a template.
@@ -67,7 +69,12 @@ or:
 sudo bash server/install-centos.sh
 ```
 
-When installation finishes, the script prints a subscription URL. Save that URL for your personal computer.
+When installation finishes, the script prints two private URLs:
+
+- Full subscription URL for Clash Verge and other subscription clients.
+- Node provider URL ending in `-provider.yaml` for a local Mihomo config.
+
+Both URLs reuse `SUB_TOKEN`. Keep them private.
 
 ## Client Usage
 
@@ -85,7 +92,49 @@ The generated subscription profile includes:
 - `proxy-groups`
 - `rules`
 
-The VPS installer also writes local generated examples to `client/local-config/`. That directory is ignored by Git.
+The VPS installer also writes generated examples to `client/local-config/`. That directory is ignored by Git and is never the source of personal routing rules.
+
+## Personal Routing Rules
+
+Personal domain rules are stored separately from the VPS subscription. Subscription updates cannot overwrite them.
+
+Initialize the private local files on Windows:
+
+```bat
+.\client\manage-user-rules.cmd init
+```
+
+Edit these Git-ignored files:
+
+- `client/user-config/direct-domains.txt`: one domain suffix per line routed through `DIRECT`.
+- `client/user-config/proxy-domains.txt`: one domain suffix per line routed through the stable `PROXY` group.
+- `client/user-config/provider-url.txt`: the private node provider URL printed by this project's VPS installer for a standalone Mihomo config.
+
+Blank lines and `#` comments are ignored. Domains are normalized to lowercase and rendered as `DOMAIN-SUFFIX`. More specific subdomains are ordered before their parent domains. The same domain cannot appear in both policy files.
+
+Validate the local inputs:
+
+```bat
+.\client\manage-user-rules.cmd validate
+```
+
+Generated files belong under `client/local-config/`:
+
+- `clash-verge-user-rules.yaml`: persistent subscription enhancement rules.
+- `mihomo.yaml`: complete local Mihomo config when `provider-url.txt` is configured.
+
+To apply the Clash Verge rules:
+
+1. Run `.\client\manage-user-rules.cmd copy`.
+2. Right-click the current VPS subscription in Clash Verge Rev.
+3. Select **Edit Rules**, then **Advanced**.
+4. Paste, save, and update the subscription.
+
+The rules use `prepend`, so personal choices win when a server-managed rule conflicts. The text files under `client/user-config/` are the source of truth; update them before copying again.
+
+For standalone Mihomo, paste the provider URL printed by the VPS installer into `provider-url.txt`, run `.\client\manage-user-rules.cmd render`, and load `client/local-config/mihomo.yaml`. Mihomo updates nodes every hour while personal and server-default rule snapshots remain local. `render` fails rather than leaving a stale Mihomo file when the Provider URL is missing or invalid.
+
+The old generated `custom-routing-rules.yaml` is no longer produced. Existing copies are legacy files and are not deleted automatically.
 
 ## Validation
 
@@ -96,6 +145,16 @@ bash client/validate-subscription.sh client/local-config/clash-verge-check.yaml
 ```
 
 The validation checks for the required Clash profile sections and parses the YAML structure when PyYAML is available.
+
+Run the local rule and rendering tests from the personal computer:
+
+```powershell
+& .\client\tests\manage-user-rules.tests.ps1
+```
+
+```bash
+bash client/tests/render-configs.tests.sh
+```
 
 ## Updating
 
@@ -111,7 +170,9 @@ or:
 sudo bash server/install-centos.sh
 ```
 
-Tracked files under `client/active-config/` are public examples. Generated machine-local files belong under `client/local-config/`.
+Tracked files under `client/active-config/` are public examples. Generated machine-local files belong under `client/local-config/`. Personal inputs under `client/user-config/` are not regenerated or tracked by Git.
+
+If `SUB_TOKEN` changes, replace the URL in `client/user-config/provider-url.txt` and rerun `render`. The domain files do not need to change. If a Clash Verge subscription is deleted and re-imported, run `copy` and paste the rules into the new profile once.
 
 ## Uninstall
 

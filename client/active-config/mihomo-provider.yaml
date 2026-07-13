@@ -1,60 +1,48 @@
 # Generated from server/config/setup.conf(.example) by client/render-client-configs.sh
+# Personal domain rules are inserted by client/manage-user-rules.ps1.
 
 mode: rule
 mixed-port: 7897
 allow-lan: false
 log-level: info
 ipv6: true
-external-controller: ''
-secret: set-your-secret
 unified-delay: true
 profile:
   store-selected: true
-tun:
-  enable: false
-  stack: gvisor
-  auto-route: true
-  strict-route: false
-  auto-detect-interface: true
-  dns-hijack:
-  - any:53
-external-controller-pipe: \\.\pipe\verge-mihomo
-external-controller-cors:
-  allow-private-network: true
-  allow-origins:
-  - tauri://localhost
-  - http://tauri.localhost
-  - https://yacd.metacubex.one
-  - https://metacubex.github.io
-  - https://board.zash.run.place
-proxies:
-- name: 'vless-reality'
-  type: vless
-  server: '<server-public-ip>'
-  port: 443
-  uuid: '<generated-uuid>'
-  network: tcp
-  udp: true
-  tls: true
-  flow: xtls-rprx-vision
-  servername: 'www.cloudflare.com'
-  client-fingerprint: 'chrome'
-  packet-encoding: xudp
-  reality-opts:
-    public-key: '<generated-public-key>'
-    short-id: '<generated-short-id>'
+
+proxy-providers:
+  vps:
+    type: http
+    url: '__VPS_PROVIDER_URL__'
+    path: ./proxy_providers/vps.yaml
+    interval: 3600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5000
+      lazy: true
+      expected-status: 204
+
 proxy-groups:
+- name: Auto
+  type: url-test
+  use:
+  - vps
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 100
+  lazy: true
 - name: PROXY
   type: select
   proxies:
-  - 'vless-reality'
-- name: Auto
-  type: select
-  proxies:
-  - PROXY
-  - 'vless-reality'
+  - Auto
+  use:
+  - vps
+
 rules:
-- IP-CIDR,<server-public-ip>/32,DIRECT,no-resolve
+# __USER_RULES__
+- IP-CIDR,__VPS_PUBLIC_IP__/32,DIRECT,no-resolve
 - DOMAIN-SUFFIX,github.com,PROXY
 - DOMAIN-SUFFIX,githubusercontent.com,PROXY
 - DOMAIN-SUFFIX,githubassets.com,PROXY

@@ -17,10 +17,12 @@ REALITY_PUBLIC_KEY=AUTO_GENERATE
 REALITY_SHORT_ID=AUTO_GENERATE
 SUB_TOKEN=AUTO_GENERATE
 
-# Client example settings
+# Server-managed client defaults and public example settings
 CLASH_PROXY_NAME=vless-reality
 CLASH_MIXED_PORT=7897
 CLASH_SOCKS_PORT=7898
 CLASH_GLOBAL_MODE=global
 CLASH_RULE_MODE=rule
+# Comma- or whitespace-separated server-managed DIRECT suffixes.
+# Personal computer rules belong in client/user-config/direct-domains.txt instead.
 CLASH_DIRECT_EXTRA_DOMAINS=

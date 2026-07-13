@@ -1,0 +1,2 @@
+# Paste the private provider URL printed by the VPS installer.
+# https://<server>.sslip.io:8443/<subscription-token>-provider.yaml

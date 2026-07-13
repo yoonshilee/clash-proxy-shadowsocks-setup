@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+TEMP_DIR="$(mktemp -d)"
+trap 'rm -rf "${TEMP_DIR}"' EXIT
+
+TEMPLATES_DIR="${REPO_ROOT}/server/templates"
+SCRIPT_NAME="client/tests/render-configs.tests.sh"
+OS_ID="test"
+OS_VERSION_ID="1"
+
+# shellcheck source=server/scripts/load-config.sh
+source "${REPO_ROOT}/server/scripts/load-config.sh"
+load_project_config "${REPO_ROOT}"
+
+# shellcheck source=server/scripts/install-common.sh
+source "${REPO_ROOT}/server/scripts/install-common.sh"
+
+public_ip="203.0.113.10"
+xray_port="443"
+xray_uuid="11111111-1111-4111-8111-111111111111"
+reality_server_name="www.cloudflare.com"
+reality_fingerprint="chrome"
+reality_public_key="test-public-key"
+reality_short_id="0123456789abcdef"
+subscription_port="8443"
+sub_token="test-token"
+
+provider_file="${TEMP_DIR}/test-token-provider.yaml"
+write_proxy_provider_yaml "${provider_file}"
+validate_proxy_provider_yaml "${provider_file}"
+
+grep -Eq '^proxies:' "${provider_file}"
+grep -Eq 'type: vless' "${provider_file}"
+! grep -Eq '^proxy-groups:' "${provider_file}"
+! grep -Eq '^rules:' "${provider_file}"
+
+RENDER_PUBLIC_IP="${public_ip}" \
+RENDER_XRAY_PORT="${xray_port}" \
+RENDER_XRAY_UUID="${xray_uuid}" \
+RENDER_REALITY_PUBLIC_KEY="${reality_public_key}" \
+RENDER_REALITY_SHORT_ID="${reality_short_id}" \
+RENDER_REALITY_SERVER_NAME="${reality_server_name}" \
+RENDER_SUB_TOKEN="${sub_token}" \
+RENDER_PROVIDER_URL="https://${public_ip}.sslip.io:${subscription_port}/${sub_token}-provider.yaml" \
+RENDER_OUTPUT_DIR="${TEMP_DIR}/rendered" \
+bash "${REPO_ROOT}/client/render-client-configs.sh"
+
+bash "${REPO_ROOT}/client/validate-subscription.sh" "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+[[ -f "${TEMP_DIR}/rendered/mihomo-provider.yaml" ]]
+[[ ! -f "${TEMP_DIR}/rendered/custom-routing-rules.yaml" ]]
+grep -Fq '# __USER_RULES__' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
+grep -Fq "${sub_token}-provider.yaml" "${TEMP_DIR}/rendered/mihomo-provider.yaml"
+grep -Fq 'name: PROXY' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
+! grep -Fq 'push2his.eastmoney.com' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+
+echo "Validated subscription, proxy provider, and Mihomo template generation."
