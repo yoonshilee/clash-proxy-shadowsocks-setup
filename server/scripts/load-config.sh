@@ -24,6 +24,7 @@ load_project_config() {
 
     : "${XRAY_PORT:=443}"
     : "${PUBLIC_IP:=}"
+    : "${PUBLIC_IPV6:=AUTO_DETECT}"
     : "${REALITY_SERVER_NAME:=www.cloudflare.com}"
     : "${REALITY_DEST:=www.cloudflare.com:443}"
     : "${REALITY_FINGERPRINT:=chrome}"
@@ -43,6 +44,10 @@ load_project_config() {
 
 should_autogenerate() {
     [[ -z "${1:-}" || "${1}" == "AUTO_GENERATE" ]]
+}
+
+should_autodetect() {
+    [[ -z "${1:-}" || "${1}" == "AUTO_DETECT" ]]
 }
 
 yaml_quote() {

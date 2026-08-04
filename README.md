@@ -42,6 +42,7 @@ Common settings:
 
 - `XRAY_PORT`
 - `PUBLIC_IP`
+- `PUBLIC_IPV6`
 - `REALITY_SERVER_NAME`
 - `REALITY_DEST`
 - `SUBSCRIPTION_PORT`
@@ -55,6 +56,7 @@ Notes:
 - `server/config/setup.conf.example` is only a template.
 - `server/config/setup.conf` is private, machine-specific, and ignored by Git.
 - Generated runtime values are written back to `server/config/setup.conf` after a successful install.
+- `PUBLIC_IPV6=AUTO_DETECT` publishes an additional IPv6 REALITY node and IPv6 subscription URLs when the VPS has a globally routable IPv6 address. Set it to an explicit address when automatic detection is unavailable.
 - Keep UUIDs, REALITY keys, short IDs, tokens, private IPs, and subscription URLs out of commits and public messages.
 
 Run the installer with root privileges:
@@ -69,12 +71,12 @@ or:
 sudo bash server/install-centos.sh
 ```
 
-When installation finishes, the script prints two private URLs:
+When installation finishes, the script prints the private IPv4 subscription and provider URLs. If `PUBLIC_IPV6` is available, it also prints IPv6 equivalents whose sslip.io hostnames resolve through AAAA records.
 
 - Full subscription URL for Clash Verge and other subscription clients.
 - Node provider URL ending in `-provider.yaml` for a local Mihomo config.
 
-Both URLs reuse `SUB_TOKEN`. Keep them private.
+All URLs reuse `SUB_TOKEN`. Keep them private. The full subscription and provider files contain both IPv4 and IPv6 nodes when IPv6 publishing is enabled, so importing either URL provides both paths.
 
 ## Client Usage
 

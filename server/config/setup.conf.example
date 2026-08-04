@@ -5,6 +5,8 @@
 # Server-side settings
 XRAY_PORT=443
 PUBLIC_IP=
+# Leave this as AUTO_DETECT to publish an IPv6 node and subscription URL when available.
+PUBLIC_IPV6=AUTO_DETECT
 REALITY_SERVER_NAME=www.cloudflare.com
 REALITY_DEST=www.cloudflare.com:443
 REALITY_FINGERPRINT=chrome

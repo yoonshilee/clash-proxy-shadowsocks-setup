@@ -71,6 +71,40 @@ detect_public_ip() {
     curl -fsS4 --max-time 5 ifconfig.me || hostname -I | awk '{print $1}'
 }
 
+detect_public_ipv6() {
+    local detected_ipv6=""
+
+    detected_ipv6="$(curl -fsS6 --max-time 5 ifconfig.me 2>/dev/null || true)"
+    if [[ -z "${detected_ipv6}" ]] && command -v ip &>/dev/null; then
+        detected_ipv6="$(ip -6 -o address show scope global 2>/dev/null \
+            | awk '!/ temporary / && !/ deprecated / { sub(/\/.*/, "", $4); print $4; exit }')"
+    fi
+
+    printf '%s' "${detected_ipv6}"
+}
+
+validate_public_ipv6() {
+    local address="$1"
+
+    python3 - "${address}" <<'PY'
+import ipaddress
+import sys
+
+try:
+    address = ipaddress.ip_address(sys.argv[1])
+except ValueError:
+    raise SystemExit(1)
+
+raise SystemExit(0 if address.version == 6 and address.is_global else 1)
+PY
+}
+
+sslip_domain_for_address() {
+    local address="$1"
+
+    printf '%s.sslip.io' "${address//:/-}"
+}
+
 get_legacy_ss_port() {
     local json="/etc/shadowsocks-libev/server.json"
 
@@ -118,6 +152,7 @@ install_xray() {
 ensure_runtime_values() {
     local key_output=""
     local detected_ip=""
+    local detected_ipv6=""
     local input=""
 
     xray_port="${XRAY_PORT}"
@@ -130,6 +165,7 @@ ensure_runtime_values() {
     reality_fingerprint="${REALITY_FINGERPRINT}"
     sub_token="${SUB_TOKEN}"
     public_ip="${PUBLIC_IP}"
+    public_ipv6="${PUBLIC_IPV6}"
     subscription_port="${SUBSCRIPTION_PORT}"
 
     if should_autogenerate "${xray_uuid}"; then
@@ -174,11 +210,28 @@ ensure_runtime_values() {
         info "Using PUBLIC_IP from config file."
     fi
 
+    if should_autodetect "${public_ipv6}"; then
+        detected_ipv6="$(detect_public_ipv6)"
+        public_ipv6="${detected_ipv6}"
+        if [[ -n "${public_ipv6}" ]]; then
+            info "Detected PUBLIC_IPV6 automatically: ${public_ipv6}"
+        else
+            info "No public IPv6 address detected; IPv6 publishing is disabled."
+        fi
+    else
+        info "Using PUBLIC_IPV6 from config file."
+    fi
+
+    if [[ -n "${public_ipv6}" ]] && ! validate_public_ipv6 "${public_ipv6}"; then
+        error "PUBLIC_IPV6 must be a globally routable IPv6 address: ${public_ipv6}"
+    fi
+
     echo ""
     echo "=== Configuration Summary ==="
     echo "  Installer variant : ${OS_FAMILY}"
     echo "  Xray port         : ${xray_port}"
     echo "  Public IP         : ${public_ip}"
+    echo "  Public IPv6       : ${public_ipv6:-disabled}"
     echo "  Proxy name        : ${CLASH_PROXY_NAME}"
     echo "  Reality target    : ${reality_dest}"
     echo "  Reality SNI       : ${reality_server_name}"
@@ -207,6 +260,7 @@ write_runtime_config() {
 # Server-side settings
 XRAY_PORT=${xray_port}
 PUBLIC_IP=${public_ip}
+PUBLIC_IPV6=${public_ipv6}
 REALITY_SERVER_NAME=${reality_server_name}
 REALITY_DEST=${reality_dest}
 REALITY_FINGERPRINT=${reality_fingerprint}
@@ -335,23 +389,58 @@ install_caddy() {
     info "Caddy installed: $(caddy version 2>&1 | head -1)"
 }
 
-write_subscription_yaml() {
-    local yaml_file="$1"
+emit_vless_proxy_yaml() {
+    local list_indent="$1"
+    local proxy_name="$2"
+    local server_address="$3"
+    local field_indent="${list_indent}  "
     local q_proxy_name=""
-    local q_public_ip=""
+    local q_server_address=""
     local q_xray_uuid=""
     local q_reality_server_name=""
     local q_reality_fingerprint=""
     local q_reality_public_key=""
     local q_reality_short_id=""
 
-    q_proxy_name="$(yaml_quote "${CLASH_PROXY_NAME}")"
-    q_public_ip="$(yaml_quote "${public_ip}")"
+    q_proxy_name="$(yaml_quote "${proxy_name}")"
+    q_server_address="$(yaml_quote "${server_address}")"
     q_xray_uuid="$(yaml_quote "${xray_uuid}")"
     q_reality_server_name="$(yaml_quote "${reality_server_name}")"
     q_reality_fingerprint="$(yaml_quote "${reality_fingerprint}")"
     q_reality_public_key="$(yaml_quote "${reality_public_key}")"
     q_reality_short_id="$(yaml_quote "${reality_short_id}")"
+
+    cat <<EOF
+${list_indent}- name: ${q_proxy_name}
+${field_indent}type: vless
+${field_indent}server: ${q_server_address}
+${field_indent}port: ${xray_port}
+${field_indent}uuid: ${q_xray_uuid}
+${field_indent}network: tcp
+${field_indent}udp: true
+${field_indent}tls: true
+${field_indent}flow: xtls-rprx-vision
+${field_indent}servername: ${q_reality_server_name}
+${field_indent}client-fingerprint: ${q_reality_fingerprint}
+${field_indent}packet-encoding: xudp
+${field_indent}reality-opts:
+${field_indent}  public-key: ${q_reality_public_key}
+${field_indent}  short-id: ${q_reality_short_id}
+EOF
+}
+
+write_subscription_yaml() {
+    local yaml_file="$1"
+    local ipv6_proxy_name="${CLASH_PROXY_NAME}-ipv6"
+    local proxy_entries=""
+    local proxy_group_entries=""
+
+    proxy_entries="$(emit_vless_proxy_yaml "  " "${CLASH_PROXY_NAME}" "${public_ip}")"
+    proxy_group_entries="      - $(yaml_quote "${CLASH_PROXY_NAME}")"
+    if [[ -n "${public_ipv6}" ]]; then
+        proxy_entries+=$'\n'"$(emit_vless_proxy_yaml "  " "${ipv6_proxy_name}" "${public_ipv6}")"
+        proxy_group_entries+=$'\n'"      - $(yaml_quote "${ipv6_proxy_name}")"
+    fi
 
     cat > "${yaml_file}" <<EOF
 # Generated by ${SCRIPT_NAME} on ${OS_ID} ${OS_VERSION_ID}
@@ -365,75 +454,39 @@ unified-delay: true
 profile:
   store-selected: true
 proxies:
-  - name: ${q_proxy_name}
-    type: vless
-    server: ${q_public_ip}
-    port: ${xray_port}
-    uuid: ${q_xray_uuid}
-    network: tcp
-    udp: true
-    tls: true
-    flow: xtls-rprx-vision
-    servername: ${q_reality_server_name}
-    client-fingerprint: ${q_reality_fingerprint}
-    packet-encoding: xudp
-    reality-opts:
-      public-key: ${q_reality_public_key}
-      short-id: ${q_reality_short_id}
+${proxy_entries}
 
 proxy-groups:
   - name: "PROXY"
     type: select
     proxies:
-      - ${q_proxy_name}
+${proxy_group_entries}
   - name: "Auto"
     type: select
     proxies:
       - "PROXY"
-      - ${q_proxy_name}
+${proxy_group_entries}
 
 rules:
-$(emit_clash_rule_lines "  - " "${public_ip}" yes)
+$(emit_clash_rule_lines "  - " "${public_ip}" yes "${public_ipv6}")
 EOF
 }
 
 write_proxy_provider_yaml() {
     local yaml_file="$1"
-    local q_proxy_name=""
-    local q_public_ip=""
-    local q_xray_uuid=""
-    local q_reality_server_name=""
-    local q_reality_fingerprint=""
-    local q_reality_public_key=""
-    local q_reality_short_id=""
+    local ipv6_proxy_name="${CLASH_PROXY_NAME}-ipv6"
+    local proxy_entries=""
 
-    q_proxy_name="$(yaml_quote "${CLASH_PROXY_NAME}")"
-    q_public_ip="$(yaml_quote "${public_ip}")"
-    q_xray_uuid="$(yaml_quote "${xray_uuid}")"
-    q_reality_server_name="$(yaml_quote "${reality_server_name}")"
-    q_reality_fingerprint="$(yaml_quote "${reality_fingerprint}")"
-    q_reality_public_key="$(yaml_quote "${reality_public_key}")"
-    q_reality_short_id="$(yaml_quote "${reality_short_id}")"
+    proxy_entries="$(emit_vless_proxy_yaml "  " "${CLASH_PROXY_NAME}" "${public_ip}")"
+    if [[ -n "${public_ipv6}" ]]; then
+        proxy_entries+=$'\n'"$(emit_vless_proxy_yaml "  " "${ipv6_proxy_name}" "${public_ipv6}")"
+    fi
 
     cat > "${yaml_file}" <<EOF
 # Generated by ${SCRIPT_NAME} on ${OS_ID} ${OS_VERSION_ID}
 
 proxies:
-  - name: ${q_proxy_name}
-    type: vless
-    server: ${q_public_ip}
-    port: ${xray_port}
-    uuid: ${q_xray_uuid}
-    network: tcp
-    udp: true
-    tls: true
-    flow: xtls-rprx-vision
-    servername: ${q_reality_server_name}
-    client-fingerprint: ${q_reality_fingerprint}
-    packet-encoding: xudp
-    reality-opts:
-      public-key: ${q_reality_public_key}
-      short-id: ${q_reality_short_id}
+${proxy_entries}
 EOF
 }
 
@@ -475,6 +528,13 @@ validate_subscription_yaml() {
     )
     local pattern=""
 
+    if [[ -n "${public_ipv6}" ]]; then
+        required_patterns+=(
+            'IP-CIDR6,.*?/128,DIRECT,no-resolve'
+            "server: '${public_ipv6}'"
+        )
+    fi
+
     [[ -f "${yaml_file}" ]] || error "Generated subscription YAML is missing: ${yaml_file}"
 
     for pattern in "${required_patterns[@]}"; do
@@ -500,6 +560,10 @@ validate_proxy_provider_yaml() {
     )
     local pattern=""
 
+    if [[ -n "${public_ipv6}" ]]; then
+        required_patterns+=("server: '${public_ipv6}'")
+    fi
+
     [[ -f "${yaml_file}" ]] || error "Generated proxy provider YAML is missing: ${yaml_file}"
 
     for pattern in "${required_patterns[@]}"; do
@@ -521,7 +585,25 @@ configure_caddy() {
     local sub_dir="/var/lib/clash-sub"
     local yaml_file="${sub_dir}/${sub_token}.yaml"
     local provider_file="${sub_dir}/${sub_token}-provider.yaml"
-    local domain="${public_ip}.sslip.io"
+    local domain=""
+    local ipv6_domain=""
+    local ipv6_index_html=""
+    local ipv6_http_redirect=""
+    local subscription_sites=""
+
+    domain="$(sslip_domain_for_address "${public_ip}")"
+    subscription_sites="https://${domain}:${subscription_port}"
+    if [[ -n "${public_ipv6}" ]]; then
+        ipv6_domain="$(sslip_domain_for_address "${public_ipv6}")"
+        subscription_sites+=$',\n'"https://${ipv6_domain}:${subscription_port}"
+        ipv6_index_html="<p>Use this IPv6 subscription URL in Clash Verge / Mihomo:</p>
+<code>https://${ipv6_domain}:${subscription_port}/${sub_token}.yaml</code>
+<p>Use this IPv6 node provider URL in a local Mihomo config:</p>
+<code>https://${ipv6_domain}:${subscription_port}/${sub_token}-provider.yaml</code>"
+        ipv6_http_redirect="http://${ipv6_domain} {
+    redir https://${ipv6_domain}:${subscription_port}{uri}
+}"
+    fi
 
     info "Setting up Clash subscription directory..."
     id clashsub &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${sub_dir}" clashsub 2>/dev/null || useradd -r -s /sbin/nologin -d "${sub_dir}" clashsub
@@ -542,6 +624,7 @@ configure_caddy() {
 <code>https://${domain}:${subscription_port}/${sub_token}.yaml</code>
 <p>Use this node provider URL in a local Mihomo config:</p>
 <code>https://${domain}:${subscription_port}/${sub_token}-provider.yaml</code>
+${ipv6_index_html}
 </body></html>
 EOF
     chmod 0640 "${sub_dir}/index.html"
@@ -565,11 +648,13 @@ http://${domain} {
     redir https://${domain}:${subscription_port}{uri}
 }
 
+${ipv6_http_redirect}
+
 import /etc/caddy/Caddyfile.d/*.caddyfile
 EOF
 
     cat > /etc/caddy/Caddyfile.d/clash-sub.caddyfile <<EOF
-https://${domain}:${subscription_port} {
+${subscription_sites} {
     root * ${sub_dir}
     file_server
 
@@ -609,6 +694,7 @@ configure_firewall() {
     info "Configuring firewall with ${firewall_script##*/}..."
     XRAY_PORT="${xray_port}" \
     SUBSCRIPTION_PORT="${subscription_port}" \
+    PUBLIC_IPV6="${public_ipv6}" \
     LEGACY_SS_PORT="${legacy_ss_port}" \
     bash "${firewall_script}"
 
@@ -646,10 +732,15 @@ configure_selinux() {
 }
 
 render_client_examples() {
-    local provider_url="https://${public_ip}.sslip.io:${subscription_port}/${sub_token}-provider.yaml"
+    local provider_domain=""
+    local provider_url=""
+
+    provider_domain="$(sslip_domain_for_address "${public_ip}")"
+    provider_url="https://${provider_domain}:${subscription_port}/${sub_token}-provider.yaml"
 
     info "Rendering local client example files from config..."
     RENDER_PUBLIC_IP="${public_ip}" \
+    RENDER_PUBLIC_IPV6="${public_ipv6}" \
     RENDER_XRAY_PORT="${xray_port}" \
     RENDER_XRAY_UUID="${xray_uuid}" \
     RENDER_REALITY_PUBLIC_KEY="${reality_public_key}" \
@@ -662,10 +753,22 @@ render_client_examples() {
 }
 
 print_summary() {
-    local domain="${public_ip}.sslip.io"
+    local domain=""
+    local ipv6_domain=""
     local legacy_ss_port=""
-    local subscription_url="https://${domain}:${subscription_port}/${sub_token}.yaml"
-    local provider_url="https://${domain}:${subscription_port}/${sub_token}-provider.yaml"
+    local subscription_url=""
+    local provider_url=""
+    local ipv6_subscription_url=""
+    local ipv6_provider_url=""
+
+    domain="$(sslip_domain_for_address "${public_ip}")"
+    subscription_url="https://${domain}:${subscription_port}/${sub_token}.yaml"
+    provider_url="https://${domain}:${subscription_port}/${sub_token}-provider.yaml"
+    if [[ -n "${public_ipv6}" ]]; then
+        ipv6_domain="$(sslip_domain_for_address "${public_ipv6}")"
+        ipv6_subscription_url="https://${ipv6_domain}:${subscription_port}/${sub_token}.yaml"
+        ipv6_provider_url="https://${ipv6_domain}:${subscription_port}/${sub_token}-provider.yaml"
+    fi
 
     legacy_ss_port="$(get_legacy_ss_port)"
 
@@ -678,7 +781,10 @@ print_summary() {
     echo "    Variant       : ${OS_ID} ${OS_VERSION_ID}"
     echo ""
     echo "  VLESS + REALITY"
-    echo "    Server        : ${public_ip}:${xray_port}"
+    echo "    IPv4 Server   : ${public_ip}:${xray_port}"
+    if [[ -n "${public_ipv6}" ]]; then
+        echo "    IPv6 Server   : [${public_ipv6}]:${xray_port}"
+    fi
     echo "    UUID          : ${xray_uuid}"
     echo "    Flow          : xtls-rprx-vision"
     echo "    Server Name   : ${reality_server_name}"
@@ -688,9 +794,15 @@ print_summary() {
     echo "    Config        : /usr/local/etc/xray/config.json"
     echo ""
     echo "  Clash Subscription"
-    echo "    URL           : ${subscription_url}"
+    echo "    IPv4 URL      : ${subscription_url}"
+    if [[ -n "${ipv6_subscription_url}" ]]; then
+        echo "    IPv6 URL      : ${ipv6_subscription_url}"
+    fi
     echo "    Includes      : proxies, proxy-groups, rules"
-    echo "    Provider URL  : ${provider_url}"
+    echo "    IPv4 Provider : ${provider_url}"
+    if [[ -n "${ipv6_provider_url}" ]]; then
+        echo "    IPv6 Provider : ${ipv6_provider_url}"
+    fi
     echo "    Provider has  : proxies only"
     echo ""
     echo "  Legacy Shadowsocks"
@@ -716,9 +828,15 @@ print_summary() {
     echo ""
     echo "  Save this subscription URL on your personal computer:"
     echo "    ${subscription_url}"
+    if [[ -n "${ipv6_subscription_url}" ]]; then
+        echo "    ${ipv6_subscription_url}"
+    fi
     echo ""
     echo "  Mihomo node provider URL:"
     echo "    ${provider_url}"
+    if [[ -n "${ipv6_provider_url}" ]]; then
+        echo "    ${ipv6_provider_url}"
+    fi
     echo ""
 }
 

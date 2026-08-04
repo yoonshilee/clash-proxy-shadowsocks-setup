@@ -33,7 +33,7 @@ Agent rules on the VPS side:
 - `server/install.sh` is only a convenience dispatcher. Agents should still identify the OS first and choose the matching installer explicitly.
 - Run `server/uninstall.sh`, `server/uninstall-centos.sh`, or `server/uninstall-ubuntu.sh` only on the VPS.
 - Edit `server/config/setup.conf` when changing server-side values. It is the VPS-side private config file and is not tracked by Git. After a successful install, the final effective values are also written back into it automatically.
-- Server-side values include `XRAY_PORT`, `PUBLIC_IP`, `REALITY_SERVER_NAME`, `REALITY_DEST`, `REALITY_FINGERPRINT`, `XRAY_UUID`, `REALITY_PRIVATE_KEY`, `REALITY_PUBLIC_KEY`, `REALITY_SHORT_ID`, `SUB_TOKEN`, and `SUBSCRIPTION_PORT`.
+- Server-side values include `XRAY_PORT`, `PUBLIC_IP`, `PUBLIC_IPV6`, `REALITY_SERVER_NAME`, `REALITY_DEST`, `REALITY_FINGERPRINT`, `XRAY_UUID`, `REALITY_PRIVATE_KEY`, `REALITY_PUBLIC_KEY`, `REALITY_SHORT_ID`, `SUB_TOKEN`, and `SUBSCRIPTION_PORT`.
 - The installer requires root or sudo.
 - The installer configures Xray, Caddy, then runs the distro-appropriate firewall-open script, and applies SELinux changes when applicable.
 - The installer stops and disables the legacy Shadowsocks service if it exists, but keeps its config file in place.
@@ -113,6 +113,5 @@ If the endpoint is unclear, the agent should ask which side the user is working 
 - Do not assume a local Clash config should be deployed to the VPS.
 - Do not assume a VPS installation script should be run on the personal computer.
 - Do not delete the legacy Shadowsocks config unless the user explicitly asks for full removal.
-
 
 

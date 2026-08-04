@@ -128,11 +128,18 @@ emit_clash_rule_lines() {
     local prefix="$1"
     local public_ip="$2"
     local include_match="${3:-yes}"
+    local public_ipv6="${4:-}"
     local extra_domains="${CLASH_DIRECT_EXTRA_DOMAINS:-}"
     local domain=""
-    declare -A seen=()
+    local seen_domains=$'\n'
 
-    printf '%sIP-CIDR,%s/32,DIRECT,no-resolve\n' "${prefix}" "${public_ip}"
+    if [[ -n "${public_ip}" ]]; then
+        printf '%sIP-CIDR,%s/32,DIRECT,no-resolve\n' "${prefix}" "${public_ip}"
+    fi
+
+    if [[ -n "${public_ipv6}" ]]; then
+        printf '%sIP-CIDR6,%s/128,DIRECT,no-resolve\n' "${prefix}" "${public_ipv6}"
+    fi
 
     for domain in "${CLASH_GITHUB_PROXY_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
@@ -143,29 +150,29 @@ emit_clash_rule_lines() {
 
     for domain in "${CLASH_MICROSOFT_DIRECT_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
-        [[ -n "${seen[${domain}]:-}" ]] && continue
-        seen["${domain}"]=1
+        [[ "${seen_domains}" == *$'\n'"${domain}"$'\n'* ]] && continue
+        seen_domains+="${domain}"$'\n'
         printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
     done
 
     for domain in "${CLASH_APPLE_DOWNLOAD_DIRECT_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
-        [[ -n "${seen[${domain}]:-}" ]] && continue
-        seen["${domain}"]=1
+        [[ "${seen_domains}" == *$'\n'"${domain}"$'\n'* ]] && continue
+        seen_domains+="${domain}"$'\n'
         printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
     done
 
     for domain in "${CLASH_CHINA_APP_DIRECT_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
-        [[ -n "${seen[${domain}]:-}" ]] && continue
-        seen["${domain}"]=1
+        [[ "${seen_domains}" == *$'\n'"${domain}"$'\n'* ]] && continue
+        seen_domains+="${domain}"$'\n'
         printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
     done
 
     while IFS= read -r domain; do
         [[ -n "${domain}" ]] || continue
-        [[ -n "${seen[${domain}]:-}" ]] && continue
-        seen["${domain}"]=1
+        [[ "${seen_domains}" == *$'\n'"${domain}"$'\n'* ]] && continue
+        seen_domains+="${domain}"$'\n'
         printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
     done < <(normalize_domain_list "${extra_domains}")
 

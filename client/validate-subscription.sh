@@ -49,6 +49,12 @@ required_patterns=(
     'MATCH,PROXY'
 )
 
+if grep -Eq "^[[:space:]]+server: '[^']*:[^']*'$" "${PROFILE_PATH}"; then
+    required_patterns+=(
+        'IP-CIDR6,.*?/128,DIRECT,no-resolve'
+    )
+fi
+
 for pattern in "${required_patterns[@]}"; do
     if ! grep -Eq "${pattern}" "${PROFILE_PATH}"; then
         echo "Missing required content: ${pattern}" >&2

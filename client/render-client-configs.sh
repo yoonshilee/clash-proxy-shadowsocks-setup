@@ -21,7 +21,38 @@ derive_reality_public_key() {
     awk -F': ' '/Public key|PublicKey|Password/ {print $2}' <<<"${key_output}"
 }
 
+emit_rendered_proxy_yaml() {
+    local list_indent="$1"
+    local proxy_name="$2"
+    local server_address="$3"
+    local field_indent="${list_indent}  "
+    local q_name=""
+    local q_address=""
+
+    q_name="$(yaml_quote "${proxy_name}")"
+    q_address="$(yaml_quote "${server_address}")"
+
+    cat <<EOF
+${list_indent}- name: ${q_name}
+${field_indent}type: vless
+${field_indent}server: ${q_address}
+${field_indent}port: ${xray_port}
+${field_indent}uuid: ${q_xray_uuid}
+${field_indent}network: tcp
+${field_indent}udp: true
+${field_indent}tls: true
+${field_indent}flow: xtls-rprx-vision
+${field_indent}servername: ${q_reality_server_name}
+${field_indent}client-fingerprint: ${q_reality_fingerprint}
+${field_indent}packet-encoding: xudp
+${field_indent}reality-opts:
+${field_indent}  public-key: ${q_reality_public_key}
+${field_indent}  short-id: ${q_reality_short_id}
+EOF
+}
+
 public_ip="${RENDER_PUBLIC_IP:-${PUBLIC_IP:-<server-public-ip>}}"
+public_ipv6="${RENDER_PUBLIC_IPV6:-${PUBLIC_IPV6:-}}"
 xray_port="${RENDER_XRAY_PORT:-${XRAY_PORT}}"
 xray_uuid="${RENDER_XRAY_UUID:-${XRAY_UUID}}"
 reality_server_name="${RENDER_REALITY_SERVER_NAME:-${REALITY_SERVER_NAME}}"
@@ -30,6 +61,11 @@ reality_public_key="${RENDER_REALITY_PUBLIC_KEY:-${REALITY_PUBLIC_KEY}}"
 sub_token="${RENDER_SUB_TOKEN:-${SUB_TOKEN}}"
 provider_url="${RENDER_PROVIDER_URL:-__VPS_PROVIDER_URL__}"
 mihomo_public_ip="${RENDER_PUBLIC_IP:-__VPS_PUBLIC_IP__}"
+mihomo_public_ipv6="${RENDER_PUBLIC_IPV6:-}"
+
+if should_autodetect "${public_ipv6}"; then
+    public_ipv6=""
+fi
 
 if should_autogenerate "${xray_uuid}"; then
     xray_uuid="<generated-uuid>"
@@ -62,6 +98,14 @@ q_reality_fingerprint="$(yaml_quote "${REALITY_FINGERPRINT}")"
 q_reality_public_key="$(yaml_quote "${reality_public_key}")"
 q_reality_short_id="$(yaml_quote "${reality_short_id}")"
 q_provider_url="$(yaml_quote "${provider_url}")"
+
+ipv6_proxy_name="${CLASH_PROXY_NAME}-ipv6"
+proxy_entries="$(emit_rendered_proxy_yaml "" "${CLASH_PROXY_NAME}" "${public_ip}")"
+proxy_group_entries="  - ${q_proxy_name}"
+if [[ -n "${public_ipv6}" ]]; then
+    proxy_entries+=$'\n'"$(emit_rendered_proxy_yaml "" "${ipv6_proxy_name}" "${public_ipv6}")"
+    proxy_group_entries+=$'\n'"  - $(yaml_quote "${ipv6_proxy_name}")"
+fi
 
 mkdir -p "${DOCS_DIR}"
 
@@ -96,33 +140,19 @@ external-controller-cors:
   - https://metacubex.github.io
   - https://board.zash.run.place
 proxies:
-- name: ${q_proxy_name}
-  type: vless
-  server: ${q_public_ip}
-  port: ${xray_port}
-  uuid: ${q_xray_uuid}
-  network: tcp
-  udp: true
-  tls: true
-  flow: xtls-rprx-vision
-  servername: ${q_reality_server_name}
-  client-fingerprint: ${q_reality_fingerprint}
-  packet-encoding: xudp
-  reality-opts:
-    public-key: ${q_reality_public_key}
-    short-id: ${q_reality_short_id}
+${proxy_entries}
 proxy-groups:
 - name: PROXY
   type: select
   proxies:
-  - ${q_proxy_name}
+${proxy_group_entries}
 - name: Auto
   type: select
   proxies:
   - PROXY
-  - ${q_proxy_name}
+${proxy_group_entries}
 rules:
-$(emit_clash_rule_lines "- " "${public_ip}" yes)
+$(emit_clash_rule_lines "- " "${public_ip}" yes "${public_ipv6}")
 EOF
 
 cat > "${DOCS_DIR}/clash-verge-check.yaml" <<EOF
@@ -156,33 +186,19 @@ external-controller-cors:
   - https://metacubex.github.io
   - https://board.zash.run.place
 proxies:
-- name: ${q_proxy_name}
-  type: vless
-  server: ${q_public_ip}
-  port: ${xray_port}
-  uuid: ${q_xray_uuid}
-  network: tcp
-  udp: true
-  tls: true
-  flow: xtls-rprx-vision
-  servername: ${q_reality_server_name}
-  client-fingerprint: ${q_reality_fingerprint}
-  packet-encoding: xudp
-  reality-opts:
-    public-key: ${q_reality_public_key}
-    short-id: ${q_reality_short_id}
+${proxy_entries}
 proxy-groups:
 - name: PROXY
   type: select
   proxies:
-  - ${q_proxy_name}
+${proxy_group_entries}
 - name: Auto
   type: select
   proxies:
   - PROXY
-  - ${q_proxy_name}
+${proxy_group_entries}
 rules:
-$(emit_clash_rule_lines "- " "${public_ip}" yes)
+$(emit_clash_rule_lines "- " "${public_ip}" yes "${public_ipv6}")
 EOF
 
 cat > "${DOCS_DIR}/mihomo-provider.yaml" <<EOF
@@ -230,7 +246,7 @@ proxy-groups:
 
 rules:
 # __USER_RULES__
-$(emit_clash_rule_lines "- " "${mihomo_public_ip}" yes)
+$(emit_clash_rule_lines "- " "${mihomo_public_ip}" yes "${mihomo_public_ipv6}")
 EOF
 
 cat > "${DOCS_DIR}/opencode-proxy.cmd" <<EOF

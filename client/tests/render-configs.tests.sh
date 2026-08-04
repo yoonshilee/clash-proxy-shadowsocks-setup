@@ -20,6 +20,7 @@ load_project_config "${REPO_ROOT}"
 source "${REPO_ROOT}/server/scripts/install-common.sh"
 
 public_ip="203.0.113.10"
+public_ipv6="2001:db8::10"
 xray_port="443"
 xray_uuid="11111111-1111-4111-8111-111111111111"
 reality_server_name="www.cloudflare.com"
@@ -29,16 +30,38 @@ reality_short_id="0123456789abcdef"
 subscription_port="8443"
 sub_token="test-token"
 
+subscription_file="${TEMP_DIR}/test-token.yaml"
+write_subscription_yaml "${subscription_file}"
+validate_subscription_yaml "${subscription_file}"
+
 provider_file="${TEMP_DIR}/test-token-provider.yaml"
 write_proxy_provider_yaml "${provider_file}"
 validate_proxy_provider_yaml "${provider_file}"
 
+grep -Fq "server: '203.0.113.10'" "${subscription_file}"
+grep -Fq "server: '2001:db8::10'" "${subscription_file}"
+grep -Fq "IP-CIDR6,${public_ipv6}/128,DIRECT,no-resolve" "${subscription_file}"
 grep -Eq '^proxies:' "${provider_file}"
 grep -Eq 'type: vless' "${provider_file}"
+[[ "$(grep -c 'type: vless' "${provider_file}")" -eq 2 ]]
+grep -Fq "server: '2001:db8::10'" "${provider_file}"
 ! grep -Eq '^proxy-groups:' "${provider_file}"
 ! grep -Eq '^rules:' "${provider_file}"
+[[ "$(sslip_domain_for_address "${public_ipv6}")" == "2001-db8--10.sslip.io" ]]
+
+public_ipv6=""
+ipv4_only_subscription_file="${TEMP_DIR}/ipv4-only.yaml"
+ipv4_only_provider_file="${TEMP_DIR}/ipv4-only-provider.yaml"
+write_subscription_yaml "${ipv4_only_subscription_file}"
+validate_subscription_yaml "${ipv4_only_subscription_file}"
+write_proxy_provider_yaml "${ipv4_only_provider_file}"
+validate_proxy_provider_yaml "${ipv4_only_provider_file}"
+[[ "$(grep -c 'type: vless' "${ipv4_only_provider_file}")" -eq 1 ]]
+! grep -Fq 'IP-CIDR6,' "${ipv4_only_subscription_file}"
+public_ipv6="2001:db8::10"
 
 RENDER_PUBLIC_IP="${public_ip}" \
+RENDER_PUBLIC_IPV6="${public_ipv6}" \
 RENDER_XRAY_PORT="${xray_port}" \
 RENDER_XRAY_UUID="${xray_uuid}" \
 RENDER_REALITY_PUBLIC_KEY="${reality_public_key}" \
@@ -55,6 +78,9 @@ bash "${REPO_ROOT}/client/validate-subscription.sh" "${TEMP_DIR}/rendered/clash-
 grep -Fq '# __USER_RULES__' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq "${sub_token}-provider.yaml" "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq 'name: PROXY' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
+grep -Fq "server: '${public_ipv6}'" "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq "IP-CIDR6,${public_ipv6}/128,DIRECT,no-resolve" "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq "IP-CIDR6,${public_ipv6}/128,DIRECT,no-resolve" "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq 'DOMAIN-SUFFIX,apps.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 grep -Fq 'DOMAIN-SUFFIX,itunes.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 grep -Fq 'DOMAIN-SUFFIX,mzstatic.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
