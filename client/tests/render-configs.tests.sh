@@ -33,6 +33,7 @@ sub_token="test-token"
 subscription_file="${TEMP_DIR}/test-token.yaml"
 write_subscription_yaml "${subscription_file}"
 validate_subscription_yaml "${subscription_file}"
+bash "${REPO_ROOT}/client/validate-subscription.sh" "${subscription_file}"
 
 provider_file="${TEMP_DIR}/test-token-provider.yaml"
 write_proxy_provider_yaml "${provider_file}"

@@ -18,7 +18,7 @@ required_patterns=(
     'type: vless'
     'packet-encoding: xudp'
     'reality-opts:'
-    'name: Auto'
+    "name: [\"']?Auto[\"']?$"
     'IP-CIDR,.*?/32,DIRECT,no-resolve'
     'DOMAIN-SUFFIX,github.com,PROXY'
     'DOMAIN-SUFFIX,githubusercontent.com,PROXY'
