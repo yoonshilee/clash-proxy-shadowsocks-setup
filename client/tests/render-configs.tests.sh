@@ -55,6 +55,10 @@ bash "${REPO_ROOT}/client/validate-subscription.sh" "${TEMP_DIR}/rendered/clash-
 grep -Fq '# __USER_RULES__' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq "${sub_token}-provider.yaml" "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq 'name: PROXY' "${TEMP_DIR}/rendered/mihomo-provider.yaml"
+grep -Fq 'DOMAIN-SUFFIX,apps.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq 'DOMAIN-SUFFIX,itunes.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq 'DOMAIN-SUFFIX,mzstatic.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq 'DOMAIN-SUFFIX,devstreaming-cdn.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 ! grep -Fq 'push2his.eastmoney.com' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 
 echo "Validated subscription, proxy provider, and Mihomo template generation."

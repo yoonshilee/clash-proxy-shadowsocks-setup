@@ -21,6 +21,17 @@ CLASH_MICROSOFT_DIRECT_SUFFIXES=(
     "azureedge.net"
 )
 
+CLASH_APPLE_DOWNLOAD_DIRECT_SUFFIXES=(
+    "apps.apple.com"
+    "appstore.com"
+    "itunes.apple.com"
+    "mzstatic.com"
+    "cdn-apple.com"
+    "swcdn.apple.com"
+    "appldnld.apple.com"
+    "devstreaming-cdn.apple.com"
+)
+
 CLASH_GITHUB_PROXY_SUFFIXES=(
     "github.com"
     "githubusercontent.com"
@@ -131,6 +142,13 @@ emit_clash_rule_lines() {
     printf '%sGEOSITE,microsoft,DIRECT\n' "${prefix}"
 
     for domain in "${CLASH_MICROSOFT_DIRECT_SUFFIXES[@]}"; do
+        [[ -n "${domain}" ]] || continue
+        [[ -n "${seen[${domain}]:-}" ]] && continue
+        seen["${domain}"]=1
+        printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
+    done
+
+    for domain in "${CLASH_APPLE_DOWNLOAD_DIRECT_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
         [[ -n "${seen[${domain}]:-}" ]] && continue
         seen["${domain}"]=1
