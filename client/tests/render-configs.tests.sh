@@ -84,6 +84,8 @@ grep -Fq "IP-CIDR6,${public_ipv6}/128,DIRECT,no-resolve" "${TEMP_DIR}/rendered/c
 grep -Fq "IP-CIDR6,${public_ipv6}/128,DIRECT,no-resolve" "${TEMP_DIR}/rendered/mihomo-provider.yaml"
 grep -Fq 'DOMAIN-SUFFIX,apps.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 grep -Fq 'DOMAIN-SUFFIX,itunes.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq 'DOMAIN-SUFFIX,mail.me.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
+grep -Fq 'DOMAIN-SUFFIX,mail.icloud.com.cn,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 grep -Fq 'DOMAIN-SUFFIX,mzstatic.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 grep -Fq 'DOMAIN-SUFFIX,devstreaming-cdn.apple.com,DIRECT' "${TEMP_DIR}/rendered/clash-verge-check.yaml"
 ! grep -Fq 'push2his.eastmoney.com' "${TEMP_DIR}/rendered/clash-verge-check.yaml"

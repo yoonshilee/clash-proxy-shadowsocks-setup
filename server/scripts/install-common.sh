@@ -513,6 +513,8 @@ validate_subscription_yaml() {
         'DOMAIN-SUFFIX,apps.apple.com,DIRECT'
         'DOMAIN-SUFFIX,appstore.com,DIRECT'
         'DOMAIN-SUFFIX,itunes.apple.com,DIRECT'
+        'DOMAIN-SUFFIX,mail.me.com,DIRECT'
+        'DOMAIN-SUFFIX,mail.icloud.com.cn,DIRECT'
         'DOMAIN-SUFFIX,mzstatic.com,DIRECT'
         'DOMAIN-SUFFIX,cdn-apple.com,DIRECT'
         'DOMAIN-SUFFIX,swcdn.apple.com,DIRECT'

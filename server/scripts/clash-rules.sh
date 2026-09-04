@@ -21,10 +21,12 @@ CLASH_MICROSOFT_DIRECT_SUFFIXES=(
     "azureedge.net"
 )
 
-CLASH_APPLE_DOWNLOAD_DIRECT_SUFFIXES=(
+CLASH_APPLE_DIRECT_SUFFIXES=(
     "apps.apple.com"
     "appstore.com"
     "itunes.apple.com"
+    "mail.me.com"
+    "mail.icloud.com.cn"
     "mzstatic.com"
     "cdn-apple.com"
     "swcdn.apple.com"
@@ -155,7 +157,7 @@ emit_clash_rule_lines() {
         printf '%sDOMAIN-SUFFIX,%s,DIRECT\n' "${prefix}" "${domain}"
     done
 
-    for domain in "${CLASH_APPLE_DOWNLOAD_DIRECT_SUFFIXES[@]}"; do
+    for domain in "${CLASH_APPLE_DIRECT_SUFFIXES[@]}"; do
         [[ -n "${domain}" ]] || continue
         [[ "${seen_domains}" == *$'\n'"${domain}"$'\n'* ]] && continue
         seen_domains+="${domain}"$'\n'
